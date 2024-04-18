@@ -1,0 +1,1 @@
+export { ShowMoreInfoResult } from './ui'

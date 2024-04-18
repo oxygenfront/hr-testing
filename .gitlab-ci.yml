@@ -1,0 +1,31 @@
+stages:
+  - build
+
+.build_template: &build_configuration
+  stage: build
+  tags:
+    - corp-devops
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [ "" ]
+  before_script:
+    - mkdir -p /kaniko/.docker
+    - echo "$DOCKER_AUTH_CONFIG" > /kaniko/.docker/config.json
+    - set -x
+  script:
+    - |
+      /kaniko/executor --skip-tls-verify --force \
+        --cache=true --cache-ttl=72h \
+        --label org.opencontainers.image.url=${CI_PROJECT_URL} \
+        --label org.opencontainers.image.revision=${CI_COMMIT_SHA} \
+        --label org.opencontainers.image.ref.title="${CI_PROJECT_NAMESPACE}-${CI_PROJECT_NAME}" \
+        --label org.opencontainers.image.created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+        --context $CI_PROJECT_DIR \
+        --dockerfile $CI_PROJECT_DIR/Dockerfile \
+        --destination=$REGISTRY/$REGISTRY_IMAGE/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG//-/\.}.${BUILD_TYPE}.${CI_PIPELINE_IID}
+
+build:
+  extends:
+    - .build_template
+  variables:
+    DOCKER_IMAGE: "$REGISTRY/$REGISTRY_IMAGE"

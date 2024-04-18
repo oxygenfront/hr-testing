@@ -1,0 +1,3 @@
+releases:
+  client: minor
+  server: minor

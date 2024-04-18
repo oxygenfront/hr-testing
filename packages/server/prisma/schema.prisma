@@ -1,0 +1,93 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model TestResultSucceedAnswer {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questionId      String
+  selectedAnswers String[]
+  testResult      TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  testResultId    String     @db.Uuid
+}
+
+model TestResultFailedAnswer {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questionId      String
+  correctAnswers  String[]
+  selectedAnswers String[]
+  testResult      TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  testResultId    String     @db.Uuid
+}
+
+model TestResult {
+  id                  String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  succeedAnswersCount Int
+  failedAnswersCount  Int
+  succeedPercent      Int
+  succeedAnswers      TestResultSucceedAnswer[]
+  failedAnswers       TestResultFailedAnswer[]
+  userResult          UserResult                @relation(fields: [userResultId], references: [id], onDelete: Cascade)
+  userResultId        String                    @unique @db.Uuid
+}
+
+model UserResult {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String      @unique
+  userLogin  String?
+  testId     String
+  testTitle  String?
+  testResult TestResult?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  login     String   @unique
+  password  String
+  role      Role     @default(USER)
+  testId    String?
+  fullName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Answer {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String
+  isCorrect  Boolean   @default(false)
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String?   @db.Uuid
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Question {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title     String   @unique
+  type      String
+  answers   Answer[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Tests     Test[]
+}
+
+model Test {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title     String?
+  questions Question[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
